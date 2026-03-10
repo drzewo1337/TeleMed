@@ -3,6 +3,8 @@ package com.example.myapplication.ui.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +16,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,6 +37,7 @@ import com.example.myapplication.ui.navigation.Screen
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,27 +60,6 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(onClick = { viewModel.handleChangeMonth(uiState.currentMonth.minusMonths(1)) }) {
-                Text(text = "<")
-            }
-            Text(
-                text = uiState.currentMonth.atDay(1)
-                    .format(DateTimeFormatter.ofPattern("LLLL yyyy")),
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center
-            )
-            Button(onClick = { viewModel.handleChangeMonth(uiState.currentMonth.plusMonths(1)) }) {
-                Text(text = ">")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
         MonthCalendar(
             currentMonth = uiState.currentMonth,
             selectedDate = uiState.selectedDate,
@@ -87,19 +71,10 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(
-            onClick = { navController.navigate(Screen.AddMeasurement.route) },
+            onClick = { navController.navigate(Screen.AddMeasurement.createRoute(uiState.selectedDate.toString())) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(text = "Dodaj pomiar")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(
-            onClick = { navController.navigate(Screen.Settings.route) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(text = "Ustawienia")
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -116,7 +91,11 @@ fun HomeScreen(
             modifier = Modifier.weight(1f)
         ) {
             items(uiState.measurementsForSelectedDate) { measurement ->
-                MeasurementItem(measurement = measurement)
+                MeasurementItem(
+                    measurement = measurement,
+                    onClick = { navController.navigate(Screen.EditMeasurement.createRoute(measurement.id)) },
+                    onDelete = { viewModel.handleDelete(measurement) }
+                )
             }
         }
     }
@@ -130,7 +109,7 @@ private fun MonthCalendar(
     handleSelectDate: (LocalDate) -> Unit,
     handleChangeMonth: (YearMonth) -> Unit
 ) {
-    val monthFormatter = DateTimeFormatter.ofPattern("LLLL yyyy")
+        val monthFormatter = DateTimeFormatter.ofPattern("LLLL yyyy", Locale("pl"))
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -239,13 +218,25 @@ private fun MonthCalendar(
 }
 
 @Composable
-private fun MeasurementItem(measurement: Measurement) {
+private fun MeasurementItem(
+    measurement: Measurement,
+    onClick: () -> Unit = {},
+    onDelete: () -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
+            .clickable(onClick = onClick)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = when (measurement.type) {
                     MeasurementType.TEMPERATURE -> "Temperatura"
@@ -279,6 +270,18 @@ private fun MeasurementItem(measurement: Measurement) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(text = note, style = MaterialTheme.typography.bodySmall)
             }
+            }
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.padding(start = 8.dp),
+                content = {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = "Usuń pomiar",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            )
         }
     }
 }

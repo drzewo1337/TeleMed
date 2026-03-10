@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val currentMonth: YearMonth = YearMonth.now(),
@@ -84,6 +85,12 @@ class HomeViewModel(
         val selected = selectedDateState.value
         if (YearMonth.from(selected) != month) {
             selectedDateState.value = month.atDay(1)
+        }
+    }
+
+    fun handleDelete(measurement: Measurement) {
+        viewModelScope.launch {
+            measurementRepository.deleteMeasurement(measurement)
         }
     }
 }
