@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.charts
+package com.example.myapplication.ui.analysis
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,7 +34,7 @@ data class ChartSeries(
 
 enum class ChartSeriesId { TEMPERATURE, SYSTOLIC, DIASTOLIC, BLOOD_SUGAR, WEIGHT }
 
-data class ChartsUiState(
+data class AnalysisUiState(
     val timeRange: ChartTimeRange = ChartTimeRange.MONTH,
     val seriesVisibility: Map<ChartSeriesId, Boolean> = ChartSeriesId.entries.associateWith { true },
     val series: List<ChartSeries> = emptyList(),
@@ -43,7 +43,7 @@ data class ChartsUiState(
     val selectedPoint: Pair<LocalDateTime, Map<ChartSeriesId, Double>>? = null
 )
 
-class ChartsViewModel(
+class AnalysisViewModel(
     private val measurementRepository: MeasurementRepository,
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
@@ -62,7 +62,7 @@ class ChartsViewModel(
 
     private val settingsFlow = settingsRepository.observeUserSettings()
 
-    val uiState: StateFlow<ChartsUiState> = combine(
+    val uiState: StateFlow<AnalysisUiState> = combine(
         timeRangeState,
         visibilityState,
         rangeFlow,
@@ -107,7 +107,7 @@ class ChartsViewModel(
                 color = 0xFF8E24AA
             )
         )
-        ChartsUiState(
+        AnalysisUiState(
             timeRange = timeRange,
             seriesVisibility = visibility,
             series = series,
@@ -118,7 +118,7 @@ class ChartsViewModel(
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = ChartsUiState()
+        initialValue = AnalysisUiState()
     )
 
     private data class SeriesPoints(

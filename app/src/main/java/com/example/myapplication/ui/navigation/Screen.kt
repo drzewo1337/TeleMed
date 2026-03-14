@@ -2,7 +2,8 @@ package com.example.myapplication.ui.navigation
 
 sealed class Screen(val route: String) {
     data object Home : Screen("home")
-    data object Charts : Screen("charts")
+    data object Calendar : Screen("calendar")
+    data object Analysis : Screen("analysis")
     data object Settings : Screen("settings")
     data object AddMeasurement : Screen("add_measurement/{selectedDate}") {
         fun createRoute(selectedDate: String) = "add_measurement/$selectedDate"
@@ -11,4 +12,3 @@ sealed class Screen(val route: String) {
         fun createRoute(measurementId: Long) = "edit_measurement/$measurementId"
     }
 }
-

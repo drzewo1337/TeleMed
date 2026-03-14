@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.charts
+package com.example.myapplication.ui.analysis
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -7,6 +7,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,11 +16,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,6 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -34,60 +38,69 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 private val dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ChartsScreen(viewModel: ChartsViewModel) {
+fun AnalysisScreen(viewModel: AnalysisViewModel) {
     val uiState by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         Text(
-            text = "Wykresy pomiarów",
-            style = MaterialTheme.typography.titleLarge,
+            text = "Szczegółowa analiza",
+            style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = "Zakres czasu:",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        Text(text = "Zakres czasu", style = MaterialTheme.typography.labelMedium)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             ChartTimeRange.entries.forEach { range ->
                 FilterChip(
                     selected = uiState.timeRange == range,
                     onClick = { viewModel.setTimeRange(range) },
-                    label = { Text(range.label) }
+                    label = {
+                        Text(
+                            text = range.label,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    modifier = Modifier.height(48.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 )
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
 
-        Button(
-            onClick = { viewModel.setTimeRange(ChartTimeRange.MONTH) },
-            modifier = Modifier.align(Alignment.Start)
-        ) {
-            Text("Dzisiaj (miesiąc)")
-        }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Box(
             modifier = Modifier
-                .weight(1f)
+                .height(280.dp)
                 .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
                 .pointerInput(Unit) {
-                    detectTapGestures { offset ->
-                        // optional: find nearest point for tooltip
-                    }
+                    detectTapGestures { }
                 }
         ) {
             ChartContent(
@@ -96,37 +109,44 @@ fun ChartsScreen(viewModel: ChartsViewModel) {
             )
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Legenda (dotknij, aby włączyć/wyłączyć):",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Legenda (dotknij, aby włączyć/wyłączyć)", style = MaterialTheme.typography.labelSmall)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
+
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             uiState.series.forEach { series ->
                 val isVisible = uiState.seriesVisibility[series.id] == true
                 Surface(
                     modifier = Modifier
                         .clickable { viewModel.toggleSeries(series.id) }
-                        .padding(4.dp),
-                    shape = MaterialTheme.shapes.small,
-                    color = if (isVisible) Color(series.color).copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceVariant
+                        .height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isVisible) Color(series.color).copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(12.dp)
+                                .size(20.dp)
+                                .clip(CircleShape)
                                 .background(if (isVisible) Color(series.color) else Color.Gray)
                         )
-                        Spacer(modifier = Modifier.size(4.dp))
                         Text(
                             text = series.label,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
                             color = if (isVisible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -135,12 +155,12 @@ fun ChartsScreen(viewModel: ChartsViewModel) {
         }
 
         uiState.selectedPoint?.let { (dateTime, values) ->
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Surface(
-                shape = MaterialTheme.shapes.medium,
+                shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = dateTime.format(dateTimeFormatter),
                         style = MaterialTheme.typography.titleSmall,
@@ -149,12 +169,14 @@ fun ChartsScreen(viewModel: ChartsViewModel) {
                     values.forEach { (id, value) ->
                         Text(
                             text = "${id.name}: $value",
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodyLarge
                         )
                     }
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -170,7 +192,7 @@ private fun ChartContent(
         ) {
             Text(
                 text = "Brak danych w wybranym zakresie",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -182,7 +204,7 @@ private fun ChartContent(
     val maxTime = allPoints.maxOf { it.first }
     val timeRange = (maxTime - minTime).coerceAtLeast(1L)
 
-    Canvas(modifier = modifier) {
+    Canvas(modifier = modifier.padding(8.dp)) {
         val width = size.width
         val height = size.height
         val paddingHorizontal = 40f
@@ -211,12 +233,12 @@ private fun ChartContent(
             drawPath(
                 path = path,
                 color = Color(s.color),
-                style = Stroke(width = 3f)
+                style = Stroke(width = 4f)
             )
             s.points.forEach { (t, v) ->
                 drawCircle(
                     color = Color(s.color),
-                    radius = 4f,
+                    radius = 6f,
                     center = Offset(timeToX(t), valueToY(v))
                 )
             }
